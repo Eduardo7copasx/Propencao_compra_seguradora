@@ -51,20 +51,33 @@ class HealthInsurance:
 
     def data_preparation(self, df5):
         df5 = df5.copy()
-
+    
+        # garante que colunas que receberão valores decimais aceitem float
+        df5["region_code"] = df5["region_code"].astype(float)
+        df5["policy_sales_channel"] = df5["policy_sales_channel"].astype(float)
+    
+        # scalers
         df5["annual_premium"] = self.annual_premium_scaler.transform(df5[["annual_premium"]])
         df5["age"] = self.age_scaler.transform(df5[["age"]])
         df5["vintage"] = self.vintage_scaler.transform(df5[["vintage"]])
-
+    
+        # encoders
         df5["gender"] = df5["gender"].map(self.target_encode_gender_scaler).astype(float)
-        df5.loc[:, "region_code"] = df5["region_code"].map(self.target_encode_region_code_scaler)
-
-        df5 = pd.get_dummies(df5, prefix="vehicle_age", columns=["vehicle_age"])
-
-        df5.loc[:, "policy_sales_channel"] = df5["policy_sales_channel"].map(
-            self.fe_policy_sales_channel_scaler
+    
+        df5["region_code"] = (
+            df5["region_code"]
+            .map(self.target_encode_region_code_scaler)
+            .astype(float)
         )
-
+    
+        df5 = pd.get_dummies(df5, prefix="vehicle_age", columns=["vehicle_age"])
+    
+        df5["policy_sales_channel"] = (
+            df5["policy_sales_channel"]
+            .map(self.fe_policy_sales_channel_scaler)
+            .astype(float)
+        )
+    
         col_selected = [
             "vintage",
             "annual_premium",
@@ -74,9 +87,9 @@ class HealthInsurance:
             "policy_sales_channel",
             "previously_insured",
         ]
-
+    
         return df5[col_selected]
-
+    
     def get_prediction(self, model, original_data, test_data):
         pred = model.predict_proba(test_data)
 
